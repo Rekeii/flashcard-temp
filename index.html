@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spaced Repetition Flashcards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            text-align: center;
+            padding: 40px;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            background: #f8f9ff;
+        }
+
+        .upload-section.hidden {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+
+        .file-input-label:hover {
+            background: #5568d3;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .card-container {
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .card-container:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-content {
+            text-align: center;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .card-side-indicator {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-hard {
+            background: #e74c3c;
+        }
+
+        .btn-hard:hover {
+            background: #c0392b;
+        }
+
+        .btn-medium {
+            background: #f39c12;
+        }
+
+        .btn-medium:hover {
+            background: #d68910;
+        }
+
+        .btn-easy {
+            background: #27ae60;
+        }
+
+        .btn-easy:hover {
+            background: #229954;
+        }
+
+        .btn-show {
+            background: #667eea;
+        }
+
+        .btn-show:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .message {
+            text-align: center;
+            padding: 20px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            color: #155724;
+            margin-bottom: 20px;
+        }
+
+        .message.hidden {
+            display: none;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Spaced Repetition Flashcards</h1>
+        <p class="subtitle">An Anki-inspired learning system</p>
+
+        <!-- File Upload Section -->
+        <div id="uploadSection" class="upload-section">
+            <p style="margin-bottom: 20px; color: #666;">Upload your Anki deck export file (.txt)</p>
+            <label for="fileInput" class="file-input-label">Choose File</label>
+            <input type="file" id="fileInput" accept=".txt">
+            <p id="fileName" style="margin-top: 15px; color: #667eea; font-weight: 500;"></p>
+        </div>
+
+        <!-- Stats Section -->
+        <div id="statsSection" class="hidden">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalCards">0</div>
+                    <div class="stat-label">Total Cards</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="dueCards">0</div>
+                    <div class="stat-label">Due Now</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="reviewedToday">0</div>
+                    <div class="stat-label">Reviewed Today</div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+
+            <!-- Message -->
+            <div id="message" class="message hidden"></div>
+
+            <!-- Card Display -->
+            <div id="cardContainer" class="card-container" onclick="revealCard()">
+                <div class="card-content" id="cardContent">
+                    Click to start studying!
+                </div>
+                <div class="card-side-indicator" id="sideIndicator"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button id="showBtn" class="btn-show" onclick="revealCard()">Show Answer</button>
+            </div>
+            
+            <div class="button-group hidden" id="ratingButtons">
+                <button class="btn-hard" onclick="rateCard('hard')">
+                    Hard<br><small id="hardTime">1m</small>
+                </button>
+                <button class="btn-medium" onclick="rateCard('medium')">
+                    Medium<br><small id="mediumTime">5m</small>
+                </button>
+                <button class="btn-easy" onclick="rateCard('easy')">
+                    Easy<br><small id="easyTime">10m</small>
+                </button>
+            </div>
+
+            <p class="info-text" id="nextCardInfo"></p>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // DATA STRUCTURES AND STATE
+        // ========================================
+        
+        // Main flashcard storage
+        let flashcards = [];
+        
+        // Current card being displayed
+        let currentCard = null;
+        
+        // Whether we're showing the front or back
+        let showingAnswer = false;
+        
+        // Statistics
+        let stats = {
+            totalCards: 0,
+            dueCards: 0,
+            reviewedToday: 0
+        };
+
+        // ========================================
+        // SPACED REPETITION ALGORITHM
+        // ========================================
+        
+        /**
+         * Card object structure:
+         * {
+         *   front: string,           // Question text
+         *   back: string,            // Answer text
+         *   interval: number,        // Current interval in minutes
+         *   dueTime: timestamp,      // When card should be reviewed next
+         *   easeFactor: number,      // Multiplier for interval growth (1.3 - 2.5)
+         *   reviewCount: number      // How many times reviewed
+         * }
+         */
+
+        /**
+         * Initialize a new flashcard with default spaced repetition parameters
+         */
+        function createCard(front, back) {
+            return {
+                front: front,
+                back: back,
+                interval: 0,              // Start with 0 (new card)
+                dueTime: Date.now(),      // Due immediately
+                easeFactor: 2.5,          // Default ease factor (Anki default)
+                reviewCount: 0            // Never reviewed
+            };
+        }
+
+        /**
+         * Calculate next review interval based on rating
+         * This implements a simplified version of the SM-2 algorithm (SuperMemo 2)
+         * used by Anki
+         * 
+         * @param {object} card - The flashcard being reviewed
+         * @param {string} rating - 'hard', 'medium', or 'easy'
+         */
+        function calculateNextInterval(card, rating) {
+            let newInterval;
+            let newEaseFactor = card.easeFactor;
+
+            // First review - use fixed intervals
+            if (card.reviewCount === 0) {
+                switch(rating) {
+                    case 'hard':
+                        newInterval = 1;      // 1 minute
+                        newEaseFactor -= 0.15; // Decrease ease
+                        break;
+                    case 'medium':
+                        newInterval = 5;      // 5 minutes
+                        break;
+                    case 'easy':
+                        newInterval = 10;     // 10 minutes
+                        newEaseFactor += 0.15; // Increase ease
+                        break;
+                }
+            } 
+            // Subsequent reviews - multiply by ease factor
+            else {
+                switch(rating) {
+                    case 'hard':
+                        // 1.2x the current interval, decrease ease
+                        newInterval = card.interval * 1.2;
+                        newEaseFactor = Math.max(1.3, card.easeFactor - 0.15);
+                        break;
+                    case 'medium':
+                        // Multiply by current ease factor
+                        newInterval = card.interval * card.easeFactor;
+                        break;
+                    case 'easy':
+                        // Multiply by ease factor + bonus, increase ease
+                        newInterval = card.interval * card.easeFactor * 1.3;
+                        newEaseFactor = Math.min(2.5, card.easeFactor + 0.15);
+                        break;
+                }
+            }
+
+            // Ensure ease factor stays within reasonable bounds (1.3 - 2.5)
+            newEaseFactor = Math.max(1.3, Math.min(2.5, newEaseFactor));
+
+            return {
+                interval: newInterval,
+                easeFactor: newEaseFactor
+            };
+        }
+
+        /**
+         * Update card after review
+         */
+        function updateCard(card, rating) {
+            const { interval, easeFactor } = calculateNextInterval(card, rating);
+            
+            card.interval = interval;
+            card.easeFactor = easeFactor;
+            card.reviewCount++;
+            // Set due time to now + interval (in milliseconds)
+            card.dueTime = Date.now() + (interval * 60 * 1000);
+            
+            return card;
+        }
+
+        // ========================================
+        // FILE PARSING
+        // ========================================
+
+        /**
+         * Parse Anki export file (tab-separated format)
+         * Expected format: GUID\tType\tDeck\tFront\tBack\tTags
+         */
+        function parseAnkiFile(content) {
+            const lines = content.split('\n');
+            const cards = [];
+            
+            for (let line of lines) {
+                // Skip header lines (start with #) and empty lines
+                if (line.startsWith('#') || line.trim() === '') {
+                    continue;
+                }
+                
+                // Split by tab character
+                const parts = line.split('\t');
+                
+                // We expect at least 5 columns (GUID, Type, Deck, Front, Back)
+                if (parts.length >= 5) {
+                    const front = stripHTML(parts[3].trim());
+                    const back = stripHTML(parts[4].trim());
+                    
+                    // Only add cards with both front and back content
+                    if (front && back) {
+                        cards.push(createCard(front, back));
+                    }
+                }
+            }
+            
+            return cards;
+        }
+
+        /**
+         * Remove HTML tags from text (simple implementation)
+         * Keeps basic structure but removes formatting
+         */
+        function stripHTML(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        // ========================================
+        // UI FUNCTIONS
+        // ========================================
+
+        /**
+         * Get all cards that are due for review
+         * In continuous mode, we'll always have cards available
+         */
+        function getDueCards() {
+            const now = Date.now();
+            const dueCards = flashcards.filter(card => card.dueTime <= now);
+            
+            // If no cards are due yet, return the card(s) with the earliest due time
+            // This ensures continuous studying without waiting
+            if (dueCards.length === 0 && flashcards.length > 0) {
+                const earliestDueTime = Math.min(...flashcards.map(c => c.dueTime));
+                return flashcards.filter(card => card.dueTime === earliestDueTime);
+            }
+            
+            return dueCards;
+        }
+
+        /**
+         * Update statistics display
+         */
+        function updateStats() {
+            stats.totalCards = flashcards.length;
+            // Count cards that are actually due NOW (not future scheduled)
+            const now = Date.now();
+            stats.dueCards = flashcards.filter(card => card.dueTime <= now).length;
+            
+            document.getElementById('totalCards').textContent = stats.totalCards;
+            document.getElementById('dueCards').textContent = stats.dueCards;
+            document.getElementById('reviewedToday').textContent = stats.reviewedToday;
+            
+            // Update progress bar based on how many cards have been reviewed at least once
+            if (stats.totalCards > 0) {
+                const reviewedAtLeastOnce = flashcards.filter(card => card.reviewCount > 0).length;
+                const progress = (reviewedAtLeastOnce / stats.totalCards) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+            }
+        }
+
+        /**
+         * Format time intervals for display
+         */
+        function formatInterval(minutes) {
+            if (minutes < 60) {
+                return Math.round(minutes) + 'm';
+            } else if (minutes < 1440) { // Less than 24 hours
+                return Math.round(minutes / 60) + 'h';
+            } else {
+                return Math.round(minutes / 1440) + 'd';
+            }
+        }
+
+        /**
+         * Update the button labels with next review times
+         */
+        function updateButtonLabels() {
+            if (!currentCard) return;
+            
+            // Calculate what the intervals would be for each rating
+            const hardResult = calculateNextInterval(currentCard, 'hard');
+            const mediumResult = calculateNextInterval(currentCard, 'medium');
+            const easyResult = calculateNextInterval(currentCard, 'easy');
+            
+            document.getElementById('hardTime').textContent = formatInterval(hardResult.interval);
+            document.getElementById('mediumTime').textContent = formatInterval(mediumResult.interval);
+            document.getElementById('easyTime').textContent = formatInterval(easyResult.interval);
+        }
+
+        /**
+         * Show the next due card
+         */
+        function showNextCard() {
+            const dueCards = getDueCards();
+            
+            // This should always have cards now due to our modified getDueCards()
+            if (dueCards.length === 0) {
+                // This shouldn't happen, but as a fallback:
+                document.getElementById('cardContent').innerHTML = '❌ No cards loaded.<br><br>Please upload a flashcard file.';
+                document.getElementById('sideIndicator').textContent = '';
+                document.getElementById('showBtn').classList.add('hidden');
+                document.getElementById('ratingButtons').classList.add('hidden');
+                return;
+            }
+            
+            // Pick a random card from due cards
+            currentCard = dueCards[Math.floor(Math.random() * dueCards.length)];
+            showingAnswer = false;
+            
+            // Display the front of the card
+            document.getElementById('cardContent').innerHTML = currentCard.front;
+            document.getElementById('sideIndicator').textContent = 'Click to reveal answer';
+            
+            // Show "Show Answer" button, hide rating buttons
+            document.getElementById('showBtn').classList.remove('hidden');
+            document.getElementById('ratingButtons').classList.add('hidden');
+            
+            // Show info about practice session
+            const actuallyDue = flashcards.filter(card => card.dueTime <= Date.now()).length;
+            if (actuallyDue === 0 && flashcards.length > 0) {
+                document.getElementById('nextCardInfo').textContent = 
+                    '🔄 Continuing practice - all cards have been reviewed at least once';
+            } else {
+                document.getElementById('nextCardInfo').textContent = '';
+            }
+            
+            updateButtonLabels();
+            updateStats();
+        }
+
+        /**
+         * Reveal the answer side of the card
+         */
+        function revealCard() {
+            if (!currentCard || showingAnswer) return;
+            
+            showingAnswer = true;
+            document.getElementById('cardContent').innerHTML = currentCard.back;
+            document.getElementById('sideIndicator').textContent = 'Rate your recall';
+            
+            // Hide "Show Answer" button, show rating buttons
+            document.getElementById('showBtn').classList.add('hidden');
+            document.getElementById('ratingButtons').classList.remove('hidden');
+        }
+
+        /**
+         * Rate the current card and move to next
+         */
+        function rateCard(rating) {
+            if (!currentCard || !showingAnswer) return;
+            
+            // Update the card with new interval
+            updateCard(currentCard, rating);
+            
+            // Increment review counter
+            stats.reviewedToday++;
+            
+            // Show brief feedback
+            const messages = {
+                'hard': '💪 Keep practicing!',
+                'medium': '👍 Good job!',
+                'easy': '🌟 Excellent!'
+            };
+            
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = messages[rating];
+            messageEl.classList.remove('hidden');
+            
+            // Hide message after 1 second and show next card
+            setTimeout(() => {
+                messageEl.classList.add('hidden');
+                showNextCard();
+            }, 1000);
+        }
+
+        /**
+         * Initialize the app after file is loaded
+         */
+        function initializeApp() {
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('statsSection').classList.remove('hidden');
+            updateStats();
+            showNextCard();
+        }
+
+        // ========================================
+        // FILE UPLOAD HANDLER
+        // ========================================
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('fileName').textContent = `Loading ${file.name}...`;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                flashcards = parseAnkiFile(content);
+                
+                if (flashcards.length === 0) {
+                    alert('No valid flashcards found in the file. Please check the format.');
+                    document.getElementById('fileName').textContent = '';
+                    return;
+                }
+                
+                document.getElementById('fileName').textContent = 
+                    `✓ Loaded ${flashcards.length} flashcards!`;
+                
+                // Start the app after a brief delay
+                setTimeout(initializeApp, 500);
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file. Please try again.');
+                document.getElementById('fileName').textContent = '';
+            };
+            
+            reader.readAsText(file);
+        });
+
+        // ========================================
+        // KEYBOARD SHORTCUTS (Optional Enhancement)
+        // ========================================
+        
+        document.addEventListener('keydown', function(e) {
+            if (!currentCard) return;
+            
+            // Space or Enter: reveal card or move to next
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                if (!showingAnswer) {
+                    revealCard();
+                }
+            }
+            
+            // Number keys for rating (when answer is showing)
+            if (showingAnswer) {
+                if (e.code === 'Digit1' || e.code === 'Numpad1') {
+                    rateCard('hard');
+                } else if (e.code === 'Digit2' || e.code === 'Numpad2') {
+                    rateCard('medium');
+                } else if (e.code === 'Digit3' || e.code === 'Numpad3') {
+                    rateCard('easy');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
